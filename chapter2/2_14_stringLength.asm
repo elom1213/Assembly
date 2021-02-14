@@ -20,3 +20,6 @@ _start:
       mov     rdi, rax
       mov     rax, 60
       syscall
+      ; check string length by command
+      ; > echo $?
+      ; it shows the exit code of the last process
