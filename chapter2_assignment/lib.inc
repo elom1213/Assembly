@@ -31,8 +31,8 @@ print_string:
       pop     rsi
 
       mov     rdx, rax  ; rax contains length
-      mov     rax, 1  ; system call number 1 : write
-      mov     rdi, 1  ; file descriptor number 1 : stdout
+      mov     rax, 1    ; system call number 1 : write
+      mov     rdi, 1    ; file descriptor number 1 : stdout
       syscall
       ret
 
@@ -53,10 +53,10 @@ print_uint:
       mov     rax, rdi  ; rdi holds 8-bytes unsigned integer
       mov     rcx, 10   ; divisor
       mov     rsi, rsp 
-      push    0   ; push 8-bytes with 0
-      dec     rsi ; rsi points highest address of the string buffer [rsp - 24 : rsp]
-      sub     rsp, 16 ; we need at most 21 bytes of buffer to store 
-                      ; 8-bytes unsigned integer including null (2^64 = 1.8466... * 10^19)
+      push    0         ; push 8-bytes with 0
+      dec     rsi       ; rsi points highest address of the string buffer [rsp - 24 : rsp]
+      sub     rsp, 16   ; we need at most 21 bytes of buffer to store 
+                        ; 8-bytes unsigned integer including null (2^64 = 1.8466... * 10^19)
 .loop:
       xor     rdx, rdx
       div     rcx
@@ -73,8 +73,18 @@ print_uint:
 
 
 print_int:
-    xor rax, rax
-    ret
+      ; test performs bitwise AND and it's result is discarded, while modify current status reg
+      ; if rdi holds negative value, test sets sign flag into 1
+      test    rdi, rdi
+      jns     print_uint
+      push    rdi
+      mov     rdi, '-'
+      call    print_char
+      pop     rdi
+      neg     rdi
+      call    print_uint
+      ret
+
 
 string_equals:
     xor rax, rax
