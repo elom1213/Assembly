@@ -31,8 +31,8 @@ print_string:
       pop     rsi
 
       mov     rdx, rax  ; rax contains length
-      mov     rax, 1  ; system call number 1 : write
-      mov     rdi, 1  ; file descriptor number 1 : stdout
+      mov     rax, 1    ; system call number 1 : write
+      mov     rdi, 1    ; file descriptor number 1 : stdout
       syscall
       ret
 
@@ -53,13 +53,13 @@ print_uint:
       mov     rax, rdi  ; rdi holds 8-bytes unsigned integer
       mov     rcx, 10   ; divisor
       mov     rsi, rsp 
-      push    0   ; push 8-bytes with 0
-      dec     rsi ; rsi points highest address of the string buffer [rsp - 24 : rsp]
-      sub     rsp, 16 ; we need at most 21 bytes of buffer to store 
-                      ; 8-bytes unsigned integer including null (2^64 = 1.8466... * 10^19)
+      push    0         ; push 8-bytes with 0
+      dec     rsi       ; rsi points highest address of the string buffer [rsp - 24 : rsp]
+      sub     rsp, 16   ; we need at most 21 bytes of buffer to store 
+                        ; 8-bytes unsigned integer including null (2^64 = 1.8466... * 10^19)
 .loop:
       xor     rdx, rdx
-      div     rcx
+      div     rcx       ; divides rax with rcx. remainder will be stored in rdx and quotient will be sotred in rax
       add     rdx, 48
       dec     rsi
       mov     [rsi], dl
@@ -71,10 +71,18 @@ print_uint:
       add     rsp, 24
       ret
 
-
 print_int:
-    xor rax, rax
-    ret
+      mov     rdx,rdi
+      sar     rdx, 63
+      cmp     rdx, 0
+      je      .print_uint
+      push    rdi       ; caller save reg
+      mov     rdi, '-'
+      call    print_char
+      pop     rdi       ; caller restore
+      neg     rdi
+      call    print_uint
+      ret
 
 string_equals:
     xor rax, rax
