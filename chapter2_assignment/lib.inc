@@ -18,7 +18,7 @@ string_length:
       xor     rax, rax
 .loop:
       cmp     byte[rdi + rax], 0
-      je      .end
+      je      string_length.end
       inc     rax
       jmp     .loop
 .end:
@@ -85,18 +85,92 @@ print_int:
       call    print_uint
       ret
 
-
-string_equals:
-    xor rax, rax
-    ret
-
-
 read_char:
-    xor rax, rax
-    ret 
+      push  0           ; allocate 1 byte on stack
+      xor   rax, rax    ; system call number 0 : read
+      xor   rdi, rdi    ; file descriptor 0 : stdin
+      mov   rsi, rsp    ; beginning of buffer
+      mov   rdx, 1      ; read 1 byte
+      syscall
+      pop   rax
+      ret 
 
 read_word:
-    ret
+      ; rdi points a buffer
+      ; rsi holds buffer size
+      ; read_word sotres word in buffer
+      ; return address of buffer storing it to rax
+      ; return word's length in rdx
+      ; if word's length exceedes buffer size, return 0
+      mov   rbx, rsi    ; save buffer size
+      dec   rbx         ; ignore null terminator
+      xor   rcx, rcx    ; counter
+.skip_whitespace:
+      push  rdi
+      push  rbx
+      push  rcx
+      call  read_char   ; rax is holding 1 byte char
+      pop   rcx
+      pop   rbx
+      pop   rdi
+
+      cmp   al, 0x09    ; tab
+      je    .skip_whitespace
+      cmp   al, 0x0a    ; line feed
+      je    .skip_whitespace
+      cmp   al, 0x0d    ; carriage return
+      je    .skip_whitespace
+      cmp   al, 0x20    ; space
+      je    .skip_whitespace
+      test  al, al
+      jz    read_word.end
+
+.store_word:
+      mov   byte[rdi + rcx], al
+      inc   rcx
+
+      push  rdi
+      push  rbx
+      push  rcx
+      call  read_char
+      pop  rcx
+      pop  rbx
+      pop  rdi
+
+      cmp   al, 0x09    ; tab
+      je    read_word.end
+      cmp   al, 0x0a    ; line feed
+      je    read_word.end
+      cmp   al, 0x0d    ; carriage return
+      je    read_word.end
+      cmp   al, 0x20    ; space
+      je    read_word.end
+
+      cmp   rcx, rbx    ; if word length >= buffer size, then exit
+      jae   .out_of_bound
+
+      test  al, al
+      jz    read_word.end
+
+      jmp   .store_word
+
+.end:
+      mov   byte[rdi + rcx], 0      ; insert null terminator at the end
+      mov   rax, rdi
+      mov   rbx, rcx
+
+      push  rax
+      push  rbx
+      call  print_string
+      call  print_newline
+      pop   rbx
+      pop   rax
+
+      ret
+
+.out_of_bound:
+      xor   rax, rax
+      ret
 
 ; rdi points to a string
 ; returns rax: number, rdx : length
@@ -110,6 +184,9 @@ parse_int:
     xor rax, rax
     ret 
 
+string_equals:
+    xor rax, rax
+    ret
 
 string_copy:
     ret
