@@ -75,7 +75,7 @@ print_int:
       mov     rdx,rdi
       sar     rdx, 63
       cmp     rdx, 0
-      je      .print_uint
+      je      print_uint
       push    rdi       ; caller save reg
       mov     rdi, '-'
       call    print_char
@@ -84,17 +84,17 @@ print_int:
       call    print_uint
       ret
 
-string_equals:
-    xor rax, rax
-    ret
-
-
 read_char:
-    xor rax, rax
-    ret 
+      push  0
+      mov   rax, 0      ; system call number 0 : read
+      mov   rdi, 0      ; file descriptor 0 : stdin
+      mov   rsi, rsp
+      mov   rdx, 1      ; read 1 byte
+      syscall
+      pop   rax
+      ret 
 
 read_word:
-    ret
 
 ; rdi points to a string
 ; returns rax: number, rdx : length
@@ -108,6 +108,9 @@ parse_int:
     xor rax, rax
     ret 
 
+string_equals:
+    xor rax, rax
+    ret
 
 string_copy:
     ret
