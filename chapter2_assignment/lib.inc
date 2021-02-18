@@ -15,6 +15,7 @@ exit:
 
 string_length:
       ; accepts a pointer to a string and returns its length
+      ; rdi points start address of string
       xor     rax, rax
 .loop:
       cmp     byte[rdi + rax], 0
@@ -38,7 +39,7 @@ print_string:
 
 print_char:
       push    rdi
-      mov     rdi, rsp  ;  rdi must contains memory address of beginning of the string
+      mov     rdi, rsp  ; rdi must contains memory address of beginning of the string
       call    print_string
       pop     rdi
       ret
@@ -158,12 +159,13 @@ read_word:
       mov   rax, rdi
       mov   rbx, rcx
 
-      push  rax
-      push  rbx
-      call  print_string
-      call  print_newline
-      pop   rbx
-      pop   rax
+      ; print word after read from stdin
+      ; push  rax
+      ; push  rbx
+      ; call  print_string
+      ; call  print_newline
+      ; pop   rbx
+      ; pop   rax
 
       ret
 
@@ -171,17 +173,53 @@ read_word:
       xor   rax, rax
       ret
 
-; rdi points to a string
-; returns rax: number, rdx : length
 parse_uint:
-    xor rax, rax
-    ret
+      ; rdi points to a string
+      ; returns rax: number, rdx : length
+      call  string_length
+      mov   r10, 10     ; divisor
+      xor   r11, r11    ; accumulator
+      xor   rcx, rcx    ; counter
+      mov   rsi, 1      ; rsi = 10^n
+.make_pow:
+      imul  rsi, 10
+      dec   rax
+      test  rax, rax
+      jnz   .make_pow
+      mov   rax, rsi    ; rax = 10^n
+      xor   rsi, rsi    ; we will parse 1 byte char into rsi
+
+.loop:
+      mov   sil, [rdi + rcx]
+      test  sil, sil
+      jz    parse_uint.end
+      inc   rcx
+      sub   sil, 48
+      jz    .if_meet_zero_str
+      mul   esi 
+      div   r10 
+      add   r11, rax
+      div   rsi     
+      jmp   .loop
+
+.if_meet_zero_str:
+      div   r10
+      jmp   .loop
+
+.end:
+      mov   rax, r11
+      mov   rbx, rcx
+      ret
 
 ; rdi points to a string
 ; returns rax: number, rdx : length
 parse_int:
-    xor rax, rax
-    ret 
+      cmp   byte[rdi], 45
+      jne   parse_uint
+      inc   rdi
+      call  parse_uint
+      neg   rax
+      ret
 
 string_equals:
     xor rax, rax
